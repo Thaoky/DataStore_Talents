@@ -1,0 +1,9 @@
+DataStore Changelog (dates in dd/mm/yyyy)
+===================
+
+
+Version 2023.11.20 (20/11/2023)
+
+- As of this version, this DataStore module will be released in a single package compatible with all versions of the game.
+- As of this version, the version number will no longer be 1.x or 9.x, but rather a date that clearly identifies when the release took place.
+
