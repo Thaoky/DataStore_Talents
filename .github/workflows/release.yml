@@ -29,10 +29,6 @@ jobs:
       # Runs a single command using the runners shell
       - name: Generate Zip file
         run: |
-
-          # Get today's date in YYYY-MM-DD format
-          DATE=$(date +%F)
-        
           # Replace spaces in the value from action variable with underscores
           VALUE_FROM_VARIABLE=$(echo "${{ github.event_name }}" | tr ' ' '_')
         
