@@ -16,7 +16,6 @@ jobs:
 
     # specify the environment variables used by the packager, matching the secrets from the project on GitHub
     env:
-      PROJECT_NAME: "DataStore Talents"
       CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
       DISPLAY_NAME: ""
       ZIP_FILE_NAME: ""
@@ -30,7 +29,7 @@ jobs:
       - name: Generate Zip file
         run: |
           # Combine date and value to form the zip file name
-          DISPLAY_NAME="$PROJECT_NAME $(date '+%Y.%m.%d')" 
+          DISPLAY_NAME="${{ vars.CURSEFORGE_DISPLAY_NAME }} $(date '+%Y.%m.%d')" 
           ZIP_FILE_NAME="$DISPLAY_NAME.zip"
           
           zip -r -9 "$ZIP_FILE_NAME" * -x README.md
@@ -46,6 +45,6 @@ jobs:
           
           curl -L -X POST \
           -H "x-api-token: ${{ secrets.CURSEFORGE_API_TOKEN }}" \
-          -F "metadata={\"displayName\": \"$DISPLAY_NAME\", \"gameVersions\": [10215,10272,10341], \"releaseType\": \"release\", \"changelog\": \"See changelog.txt\"}"  \
+          -F "metadata={\"displayName\": \"$DISPLAY_NAME\", \"gameVersions\": [ ${{ vars.CURSEFORGE_GAME_VERSIONS }}], \"releaseType\": \"release\", \"changelog\": \"See changelog.txt\"}"  \
           -F "file=@$ZIP_FILE_NAME" \
           "$API_URL"
