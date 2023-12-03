@@ -18,6 +18,7 @@ jobs:
     env:
       PROJECT_NAME: "DataStore Talents"
       CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+      DISPLAY_NAME: ""
       ZIP_FILE_NAME: ""
 
     # Steps represent a sequence of tasks that will be executed as part of the job
