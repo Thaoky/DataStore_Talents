@@ -44,6 +44,7 @@ jobs:
           echo "File name: $ZIP_FILE_NAME"
 
           # Set as environment variable for the next step
+          echo "DISPLAY_NAME=$DISPLAY_NAME" >> $GITHUB_ENV
           echo "ZIP_FILE_NAME=$ZIP_FILE_NAME" >> $GITHUB_ENV
 
       - name: Upload to Curseforge API
