@@ -4,12 +4,15 @@ June 23rd, 2009
 --]]
 if not DataStore then return end
 
-local addonName = "DataStore_Talents"
+local addonName, addon = ...
+local thisCharacter
 
-_G[addonName] = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceConsole-3.0", "AceEvent-3.0")
+local DataStore = DataStore
 
-local addon = _G[addonName]
+local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
+
 local enum = DataStore.Enum
+local bit64 = LibStub("LibBit64")
 
 local AddonDB_Defaults = {
 	global = {
@@ -31,22 +34,7 @@ local AddonDB_Defaults = {
 				activeSpecIndex = nil,
 				activeSpecName = nil,
 				activeSpecRole = nil,
-				
-				-- ** Expansion Stuff / 7.0 - Legion **
-				EquippedArtifact = nil,				-- name of the currently equipped artifact
-				ArtifactKnowledge = nil,
-				ArtifactKnowledgeMultiplier = nil,
-				Artifacts = {
-					['*'] = {
-						rank = 0,
-						pointsRemaining = 0,
-					}
-				},
-				
-				-- ** Expansion Features / 9.0 - Shadowlands **
-				Conduits = {},			-- The list of available conduits that can be installed on the soulbinds.
-				Soulbinds = {},
-				activeSoulbindID = 0,
+
 			}
 		}
 	}
@@ -82,180 +70,6 @@ local ReferenceDB_Defaults = {
 	}
 }
 
---[[
-Source : http://www.icy-veins.com/
-Last update : 05/01/2021 (9.0)
-
-Note: The priorities come from Icy Veins, although I have not respected them 100%, based on my own experience, view, and discussions with guild mates.
-They are meant to be an indication for classes you do not play too often, 
-and I do not wish to enter religious discussions about who is right or wrong, or about which stat is actually better :)
-
-ex: in some cases, Icy Veins indicated that the primary stat (STR, INT, ..) has a lesser priority than mastery or crit .. 
-well, I still kept the primary stat as #1 in the list, because in most cases, you WILL have this stat on each item.
-
-And if you reach the point where this difference matters, then you probably don't need the information any more, 
-because you supposedly already know your class well enough.
---]]
-
-local statPriority = {
-	-- Cloth
-	["MAGE"] = {
-		{ SPELL_STAT4_NAME, STAT_CRITICAL_STRIKE, STAT_MASTERY, STAT_VERSATILITY, SPELL_HASTE }, -- Arcane
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_VERSATILITY, STAT_MASTERY, STAT_CRITICAL_STRIKE }, -- Fire
-		{ SPELL_STAT4_NAME, STAT_CRITICAL_STRIKE, SPELL_HASTE, STAT_VERSATILITY, STAT_MASTERY }, -- Frost
-	},
-	["PRIEST"] = {
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Discipline
-		{ SPELL_STAT4_NAME, STAT_MASTERY, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, SPELL_HASTE }, -- Holy
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Shadow
-	},	
-	["WARLOCK"] = {
-		{ SPELL_STAT4_NAME, STAT_MASTERY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Affliction
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_MASTERY, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Demonology
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_MASTERY, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Destruction
-	},	
-	
-	-- Leather
-	["DEMONHUNTER"] = {
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_VERSATILITY, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Havoc
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_VERSATILITY, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Vengeance
-	},
-	["ROGUE"] = {
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Assassination
-		{ SPELL_STAT2_NAME, STAT_VERSATILITY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Outlaw
-		{ SPELL_STAT2_NAME, STAT_VERSATILITY, STAT_CRITICAL_STRIKE, SPELL_HASTE, STAT_MASTERY }, -- Subtlety
-	},
-	["DRUID"] = {
-		{ SPELL_STAT4_NAME, STAT_MASTERY, SPELL_HASTE, STAT_VERSATILITY, STAT_CRITICAL_STRIKE }, -- Balance
-		{ SPELL_STAT2_NAME, STAT_CRITICAL_STRIKE, STAT_MASTERY, STAT_VERSATILITY, SPELL_HASTE }, -- Feral
-		{ SPELL_STAT2_NAME, STAT_VERSATILITY, STAT_MASTERY, SPELL_HASTE, STAT_CRITICAL_STRIKE }, -- Guardian
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY, STAT_VERSATILITY }, -- Restoration
-	},
-	["MONK"] = {
-		{ SPELL_STAT2_NAME, STAT_VERSATILITY, STAT_MASTERY, STAT_CRITICAL_STRIKE, SPELL_HASTE }, -- Brewmaster
-		{ SPELL_STAT4_NAME, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, SPELL_HASTE, STAT_MASTERY }, -- Mistweaver
-		{ SPELL_STAT2_NAME, STAT_VERSATILITY, STAT_MASTERY, STAT_CRITICAL_STRIKE, SPELL_HASTE }, -- Windwalker
-	},
-	
-	-- Mail
-	["HUNTER"] = {
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Beast Mastery
-		{ SPELL_STAT2_NAME, STAT_CRITICAL_STRIKE, STAT_MASTERY, STAT_VERSATILITY, SPELL_HASTE }, -- Marksmanship
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Survival
-	},
-	["SHAMAN"] = {
-		{ SPELL_STAT4_NAME, STAT_VERSATILITY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Elemental
-		{ SPELL_STAT2_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Enhancement
-		{ SPELL_STAT4_NAME, STAT_VERSATILITY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Restoration
-	},	
-	["EVOKER"] = {
-		{ SPELL_STAT4_NAME, STAT_MASTERY, STAT_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Devastation
-		{ SPELL_STAT4_NAME, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_HASTE, STAT_MASTERY }, -- Preservation (M+)
-	},
-	
-	-- Plate
-	["DEATHKNIGHT"] = {
-		{ SPELL_STAT1_NAME, STAT_VERSATILITY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY }, -- Blood
-		{ SPELL_STAT1_NAME, STAT_MASTERY, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, SPELL_HASTE }, -- Frost
-		{ SPELL_STAT1_NAME, STAT_MASTERY, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Unholy
-	},
-	["WARRIOR"] = {
-		{ SPELL_STAT1_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_MASTERY, STAT_VERSATILITY }, -- Arms
-		{ SPELL_STAT1_NAME, SPELL_HASTE, STAT_MASTERY, STAT_CRITICAL_STRIKE, STAT_VERSATILITY }, -- Fury
-		{ SPELL_STAT1_NAME, SPELL_HASTE, STAT_VERSATILITY, STAT_MASTERY, STAT_CRITICAL_STRIKE }, -- Protection
-	},
-	["PALADIN"] = {
-		{ SPELL_STAT4_NAME, SPELL_HASTE, STAT_MASTERY, STAT_VERSATILITY, STAT_CRITICAL_STRIKE }, -- Holy
-		{ SPELL_STAT1_NAME, SPELL_HASTE, STAT_MASTERY, STAT_VERSATILITY, STAT_CRITICAL_STRIKE }, -- Protection
-		{ SPELL_STAT1_NAME, SPELL_HASTE, STAT_CRITICAL_STRIKE, STAT_VERSATILITY, STAT_MASTERY }, -- Retribution
-	},
-}
-
-local cov = Enum.CovenantType
-local recommendedCovenant = {
-	--[[ fields : 
-	main,  					best overall choice that works in all situations
-	single,  				best choice for single target
-	aoe,						best choice for aoe builds
-	raid, 					best choice for raid
-	mythic, 					best choice for mythic +
-	torghast, 				best choice for Torghast
-	choice1 & choice2 	when 2 choices are equivalent, then use both fields !
-	--]]
-
-	["MAGE"] = {
-		{ main = cov.NightFae }, -- Arcane
-		{ main = cov.NightFae }, -- Fire
-		{ main = cov.NightFae, single = cov.Venthyr }, -- Frost
-	},
-	["PRIEST"] = {
-		{ raid = cov.Venthyr, mythic = cov.Kyrian }, -- Discipline
-		{ main = cov.Necrolord }, -- Holy
-		{ raid = cov.Kyrian, mythic = cov.Necrolord }, -- Shadow
-	},	
-	["WARLOCK"] = {
-		{ raid = cov.Kyrian, mythic = cov.NightFae }, -- Affliction
-		{ choice1 = cov.NightFae, choice2 = cov.Necrolord }, -- Demonology
-		{ raid = cov.Necrolord, mythic = cov.Kyrian, torghast = cov.NightFae}, -- Destruction
-	},	
-	
-	-- Leather
-	["DEMONHUNTER"] = {
-		{ raid = cov.Venthyr, mythic = cov.Kyrian, torghast = cov.Venthyr}, -- Havoc
-		{ main = cov.Kyrian }, -- Vengeance
-	},
-	["ROGUE"] = {
-		{ mythic = cov.NightFae, choice1 = cov.Kyrian, choice2 = cov.Venthyr }, -- Assassination
-		{ mythic = cov.NightFae, choice1 = cov.Kyrian, choice2 = cov.Venthyr }, -- Outlaw
-		{ raid = cov.Kyrian, mythic = cov.NightFae }, -- Subtlety
-	},
-	["DRUID"] = {
-		{ main = cov.NightFae, mythic = cov.Kyrian }, -- Balance
-		{ main = cov.NightFae }, -- Feral
-		{ main = cov.NightFae }, -- Guardian
-		{ main = cov.NightFae }, -- Restoration
-	},
-	["MONK"] = {
-		{ main = cov.Kyrian, mythic = cov.NightFae }, -- Brewmaster
-		{ raid = cov.Kyrian, mythic = cov.NightFae, torghast = cov.Necrolord }, -- Mistweaver
-		{ raid = cov.Kyrian, mythic = cov.Necrolord, torghast = cov.NightFae }, -- Windwalker
-	},
-	
-	-- Mail
-	["HUNTER"] = {
-		{ main = cov.NightFae }, -- Beast Mastery
-		{ main = cov.NightFae, mythic = cov.Kyrian }, -- Marksmanship
-		{ main = cov.NightFae }, -- Survival
-	},
-	["SHAMAN"] = {
-		{ raid = cov.Necrolord, mythic = cov.Necrolord, torghast = cov.NightFae }, -- Elemental
-		{ main = cov.Venthyr }, -- Enhancement
-		{ raid = cov.Necrolord, mythic = cov.Venthyr, torghast = cov.Kyrian }, -- Restoration
-	},	
-	["EVOKER"] = {
-		{ main = cov.NightFae }, -- Devastation
-		{ main = cov.NightFae }, -- Preservation
-	},
-	
-	-- Plate
-	["DEATHKNIGHT"] = {
-		{ raid = cov.Kyrian, mythic = cov.Venthyr }, -- Blood
-		{ raid = cov.NightFae, mythic = cov.NightFae, choice1 = cov.Necrolord, choice2 = cov.Venthyr }, -- Frost
-		{ main = cov.Necrolord }, -- Unholy
-	},
-	["WARRIOR"] = {
-		{ main = cov.Venthyr, mythic = cov.Kyrian }, -- Arms
-		{ main = cov.Venthyr, mythic = cov.Kyrian }, -- Fury
-		{ main = cov.Kyrian, mythic = cov.NightFae }, -- Protection
-	},
-	["PALADIN"] = {
-		{ main = cov.Kyrian }, -- Holy
-		{ main = cov.Kyrian, raid = cov.Venthyr }, -- Protection
-		{ main = cov.Kyrian }, -- Retribution
-	},
-}
-
-
 -- *** Utility functions ***
 local bAnd = bit.band
 local RShift = bit.rshift
@@ -264,15 +78,6 @@ local LShift = bit.lshift
 local function GetVersion()
 	local _, version = GetBuildInfo()
 	return tonumber(version)
-end
-
-local function GetArtifactName()
-	-- local info = C_ArtifactUI.GetEquippedArtifactArtInfo()
-	local info = C_ArtifactUI.GetArtifactArtInfo()
-	if info then 
-		return info.titleName
-	end
-	-- return select(2, C_ArtifactUI.GetArtifactArtInfo())
 end
 
 local BACKGROUND_PATH = "Interface\\TalentFrame\\"
@@ -433,63 +238,10 @@ local function ScanTalentReference_Retail()
 	end
 end
 
-local function ScanSoulbinds()
-	local char = addon.ThisCharacter
-	
-	-- How this works : Conduits is the list of items on the right panel that can be "socketed" in the talent tree (the Soulbinds)
-	-- So scan the conduits first
-	-- Then scan the soulbinds, which contain the info on which the conduit is installed. 
-	-- Base soulbind information is always available, so only save the installed conduits.
-	
-	-- Scan conduit collection
-	for typeName, typeID in pairs(Enum.SoulbindConduitType) do 
-		-- Enum.SoulbindConduitType : "Finesse" = 0, "Potency" = 1 .. 
-		-- (source: https://wow.gamepedia.com/API_C_Soulbinds.GetConduitCollection)
-	
-		for _, info in pairs(C_Soulbinds.GetConduitCollection(typeID)) do
-			char.Conduits[info.conduitID] = format("%s|%s|%s|%s|%s",
-				info.conduitType, 			-- finesse, potency, etc..
-				info.conduitItemID,
-				info.conduitItemLevel, 
-				info.conduitRank, 
-				info.conduitSpecName	or ""		-- Fire, Frost, etc.. 
-			)
-		end
-	end	
-
-	char.activeSoulbindID = C_Soulbinds.GetActiveSoulbindID()
-	
-	local covenantID = C_Covenants.GetActiveCovenantID()
-	local covenantData = C_Covenants.GetCovenantData(covenantID)
-		
-	-- Scan all soulbinds of this covenant, not just the active one
-	for _, soulbindID in pairs(covenantData.soulbindIDs) do
-	
-		-- Get the soulbind data
-		local soulbinds = C_Soulbinds.GetSoulbindData(soulbindID)
-		
-		-- Loop on the tree nodes
-		for _, node in pairs(soulbinds.tree.nodes) do
-			
-			-- Source : https://wow.gamepedia.com/API_C_Soulbinds.GetSoulbindData
-			-- State is of Enum.SoulbindNodeState ("Unavailable" = 0, "Unselected" = 1, "Selectable" = 2, "Selected" = 3)
-			-- conduitID = 0 : no conduit is installed on this node
-			-- spellID = 0 : it's not a spell, but a conduitID, always available, don't save it
-			
-			char.Soulbinds[node.ID] = format("%s|%s|%s|%s|%s",
-				node.state,
-				node.conduitID,
-				node.conduitRank or 0,
-				node.conduitType or -1,					-- Explicitly pass a -1 to say there is no conduit type, because 0 = Finesse
-				node.playerConditionReason or ""		--  Ex: "Requires Renown 10"
-			)
-		end
-	end
-end
 
 -- *** Event Handlers ***
 local function OnPlayerAlive()
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+	if isRetail then
 		ScanTalents_Retail()
 		ScanTalentReference_Retail()
 	else
@@ -532,7 +284,6 @@ local function _ImportClassReference(class, data)
 end
 
 -- ** Mixins - Non-Retail **
-
 local function _GetTreeReference(class, tree)
 	assert(type(class) == "string")
 	assert(type(tree) == "string")
@@ -668,18 +419,6 @@ local function _GetSpecializationInfo(class, specialization)
 	end
 end
 
-local function _GetStatPriority(class, specialization)
-	if statPriority[class] then
-		return statPriority[class][specialization]
-	end
-end
-
-local function _GetRecommendedCovenant(class, specialization)
-	if recommendedCovenant[class] then
-		return recommendedCovenant[class][specialization]
-	end
-end
-
 local function _GetTalentInfo_Retail(class, specialization, row, column)
 	local spec = _GetSpecializationReference(class, specialization)
 	if not spec then return end
@@ -711,127 +450,6 @@ local function _IterateTalentTiers(callback)
 	end
 end
 
--- ** Artifact **
-local function _GetArtifactKnowledgeLevel(character)
-	return character.ArtifactKnowledge or 0
-end
-
-local function _GetArtifactKnowledgeMultiplier(character)
-	return character.ArtifactKnowledgeMultiplier or 0
-end
-
-local function _GetEquippedArtifact(character)
-	return character.EquippedArtifact
-end
-
-local function _GetEquippedArtifactRank(character)
-	local rank = 0
-	
-	local equippedArtifact = character.EquippedArtifact
-	if equippedArtifact then
-		local info = character.Artifacts[equippedArtifact]
-		if info and info.rank then
-			rank = info.rank
-		end
-	end
-	
-	return rank
-end
-
-local function _GetEquippedArtifactPower(character)
-	local power = 0
-	
-	local equippedArtifact = character.EquippedArtifact
-	if equippedArtifact then
-		local info = character.Artifacts[equippedArtifact]
-		if info and info.pointsRemaining then
-			power = info.pointsRemaining
-		end
-	end
-	
-	return power
-end
-
-local function _GetEquippedArtifactTier(character)
-	local tier = 0
-	
-	local equippedArtifact = character.EquippedArtifact
-	if equippedArtifact then
-		local info = character.Artifacts[equippedArtifact]
-		if info and info.tier then
-			tier = info.tier
-		end
-	end
-	
-	return tier
-end
-
-local function _GetKnownArtifacts(character)
-	return character.Artifacts
-end
-
-local function _GetNumArtifactTraitsPurchasableFromXP(currentRank, xpToSpend, currentTier)
-	-- this function is exactly the same as 
-	-- MainMenuBar_GetNumArtifactTraitsPurchasableFromXP (from MainMenuBar.lua)
-	-- but just in case it's not loaded or changes later.. I'll keep it here
-	-- Usage: 
-	--		DataStore:GetNumArtifactTraitsPurchasableFromXP(1, 945)
-	--    artifact is currently at rank 1, and we have 945 points to spend
-	
-	local numPoints = 0
-	local xpForNextPoint = C_ArtifactUI.GetCostForPointAtRank(currentRank, currentTier)
-
-	while xpToSpend >= xpForNextPoint and xpForNextPoint > 0 do
-		xpToSpend = xpToSpend - xpForNextPoint
-
-		currentRank = currentRank + 1
-		numPoints = numPoints + 1
-
-		xpForNextPoint = C_ArtifactUI.GetCostForPointAtRank(currentRank, currentTier)
-	end
-	
-	-- ex: with rank 1 and 945 points, we have enough points for 2 traits, and 320 / 350 in the last rank
-	return numPoints, xpToSpend, xpForNextPoint
-end
-
-
--- ** Covenant **
-local function _GetConduits(character)
-	return character.Conduits
-end
-
-local function _GetConduitInfo(character, conduitID)
-	if not character.Conduits[conduitID] then return end
-	
-	local conduitType, itemID, iLevel, rank, specName = strsplit("|", character.Conduits[conduitID])
-	return tonumber(conduitType), tonumber(itemID), tonumber(iLevel), tonumber(rank), specName
-end
-
-local function _GetActiveSoulbindID(character)
-	return character.activeSoulbindID
-end
-
-local function _GetActiveSoulbindName(character)
-	-- low level characters have no soulbind yet
-	if not character.activeSoulbindID or character.activeSoulbindID == 0 then return "" end
-	
-	local data = C_Soulbinds.GetSoulbindData(character.activeSoulbindID)
-	local name = (data) and data.name
-	
-	return name or ""		-- because data.name could still be nil
-end
-
-local function _GetSoulbinds(character)
-	return character.Soulbinds
-end
-
-local function _GetSoulbindInfo(character, nodeID)
-	if not character.Soulbinds[nodeID] then return end
-	
-	local state, conduitID, conduitRank, conduitType, reason = strsplit("|", character.Soulbinds[nodeID])
-	return tonumber(state), tonumber(conduitID), tonumber(conduitRank), tonumber(conduitType), reason
-end
-
 
 local PublicMethods = {
 	GetReferenceTable = _GetReferenceTable,
@@ -840,28 +458,13 @@ local PublicMethods = {
 	ImportClassReference = _ImportClassReference,
 }
 
-if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+if isRetail then
 	PublicMethods.GetSpecializationInfo = _GetSpecializationInfo
-	PublicMethods.GetStatPriority = _GetStatPriority
-	PublicMethods.GetRecommendedCovenant = _GetRecommendedCovenant
 	PublicMethods.GetTalentInfo = _GetTalentInfo_Retail
 	PublicMethods.GetSpecializationTierChoice = _GetSpecializationTierChoice
 	PublicMethods.GetActiveSpecInfo = _GetActiveSpecInfo
 	PublicMethods.IterateTalentTiers = _IterateTalentTiers
-	PublicMethods.GetArtifactKnowledgeLevel = _GetArtifactKnowledgeLevel
-	PublicMethods.GetArtifactKnowledgeMultiplier = _GetArtifactKnowledgeMultiplier
-	PublicMethods.GetEquippedArtifact = _GetEquippedArtifact
-	PublicMethods.GetEquippedArtifactRank = _GetEquippedArtifactRank
-	PublicMethods.GetEquippedArtifactPower = _GetEquippedArtifactPower
-	PublicMethods.GetEquippedArtifactTier = _GetEquippedArtifactTier
-	PublicMethods.GetKnownArtifacts = _GetKnownArtifacts
-	PublicMethods.GetNumArtifactTraitsPurchasableFromXP = _GetNumArtifactTraitsPurchasableFromXP
-	PublicMethods.GetConduits = _GetConduits
-	PublicMethods.GetConduitInfo = _GetConduitInfo
-	PublicMethods.GetActiveSoulbindID = _GetActiveSoulbindID
-	PublicMethods.GetActiveSoulbindName = _GetActiveSoulbindName
-	PublicMethods.GetSoulbinds = _GetSoulbinds
-	PublicMethods.GetSoulbindInfo = _GetSoulbindInfo
+
 else
 	PublicMethods.GetTreeReference = _GetTreeReference
 	PublicMethods.GetClassTrees = _GetClassTrees
@@ -876,78 +479,41 @@ else
 	PublicMethods.GetMainSpecialization = _GetMainSpecialization
 end
 
+DataStore:OnAddonLoaded(addonName, function() 
+	DataStore:RegisterModule({
+		addon = addon,
+		addonName = addonName,
+		characterTables = {
+			["DataStore_Talents_Characters"] = {
 
-function addon:OnInitialize()
-	addon.db = LibStub("AceDB-3.0"):New(addonName .. "DB", AddonDB_Defaults)
-	addon.ref = LibStub("AceDB-3.0"):New(addonName .. "RefDB", ReferenceDB_Defaults)
+			},
+		}
+	})
 
-	DataStore:RegisterModule(addonName, addon, PublicMethods)
 
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
-		DataStore:SetCharacterBasedMethod("GetSpecializationTierChoice")
-		DataStore:SetCharacterBasedMethod("GetArtifactKnowledgeLevel")
-		DataStore:SetCharacterBasedMethod("GetArtifactKnowledgeMultiplier")
-		DataStore:SetCharacterBasedMethod("GetEquippedArtifact")
-		DataStore:SetCharacterBasedMethod("GetEquippedArtifactRank")
-		DataStore:SetCharacterBasedMethod("GetEquippedArtifactPower")
-		DataStore:SetCharacterBasedMethod("GetEquippedArtifactTier")
-		DataStore:SetCharacterBasedMethod("GetKnownArtifacts")
-		DataStore:SetCharacterBasedMethod("GetConduits")
-		DataStore:SetCharacterBasedMethod("GetConduitInfo")
-		DataStore:SetCharacterBasedMethod("GetActiveSoulbindID")
-		DataStore:SetCharacterBasedMethod("GetActiveSoulbindName")
-		DataStore:SetCharacterBasedMethod("GetSoulbinds")
-		DataStore:SetCharacterBasedMethod("GetSoulbindInfo")
-		DataStore:SetCharacterBasedMethod("GetActiveSpecInfo")
-	else
-		DataStore:SetCharacterBasedMethod("GetTalentRank")
-		DataStore:SetCharacterBasedMethod("GetNumPointsSpent")
-		DataStore:SetCharacterBasedMethod("GetMainSpecialization")
-	end
-end
+	-- addon.db = LibStub("AceDB-3.0"):New(addonName .. "DB", AddonDB_Defaults)
+	-- addon.ref = LibStub("AceDB-3.0"):New(addonName .. "RefDB", ReferenceDB_Defaults)
 
-function addon:OnEnable()
-	addon:RegisterEvent("PLAYER_ALIVE", OnPlayerAlive)
+	-- DataStore:RegisterModule(addonName, addon, PublicMethods)
+
+	-- if isRetail then
+		-- DataStore:SetCharacterBasedMethod("GetSpecializationTierChoice")
+		-- DataStore:SetCharacterBasedMethod("GetActiveSpecInfo")
+	-- else
+		-- DataStore:SetCharacterBasedMethod("GetTalentRank")
+		-- DataStore:SetCharacterBasedMethod("GetNumPointsSpent")
+		-- DataStore:SetCharacterBasedMethod("GetMainSpecialization")
+	-- end
+end)
+
+DataStore:OnPlayerLogin(function() 
+	-- addon:RegisterEvent("PLAYER_ALIVE", OnPlayerAlive)
 	
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
-		addon:RegisterEvent("PLAYER_TALENT_UPDATE", ScanTalents_Retail)
-		addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", OnPlayerSpecializationChanged)
-		addon:RegisterEvent("SOULBIND_FORGE_INTERACTION_STARTED")
-	else
-		addon:RegisterEvent("CHARACTER_POINTS_CHANGED", ScanTalents_NonRetail)
-	end
-end
-
-function addon:OnDisable()
-	addon:UnregisterEvent("PLAYER_ALIVE")
-	
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
-		addon:UnregisterEvent("PLAYER_TALENT_UPDATE")
-		addon:UnregisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-		addon:UnregisterEvent("SOULBIND_FORGE_INTERACTION_STARTED")
-		addon:UnregisterEvent("SOULBIND_FORGE_INTERACTION_ENDED")
-	else
-		addon:UnregisterEvent("CHARACTER_POINTS_CHANGED")
-	end
-end
-
--- *** Event Handlers ***
-function addon:SOULBIND_FORGE_INTERACTION_STARTED()
-	ScanSoulbinds()
-	
-	addon:RegisterEvent("SOULBIND_FORGE_INTERACTION_ENDED")
-	addon:RegisterEvent("SOULBIND_ACTIVATED", ScanSoulbinds)
-	addon:RegisterEvent("SOULBIND_NODE_LEARNED", ScanSoulbinds)
-	addon:RegisterEvent("SOULBIND_CONDUIT_INSTALLED", ScanSoulbinds)
-	addon:RegisterEvent("SOULBIND_CONDUIT_UNINSTALLED", ScanSoulbinds)
-	addon:RegisterEvent("SOULBIND_PENDING_CONDUIT_CHANGED", ScanSoulbinds)	
-end
-
-function addon:SOULBIND_FORGE_INTERACTION_ENDED()
-	addon:UnregisterEvent("SOULBIND_FORGE_INTERACTION_ENDED")
-	addon:UnregisterEvent("SOULBIND_ACTIVATED")
-	addon:UnregisterEvent("SOULBIND_NODE_LEARNED")
-	addon:UnregisterEvent("SOULBIND_CONDUIT_INSTALLED")
-	addon:UnregisterEvent("SOULBIND_CONDUIT_UNINSTALLED")
-	addon:UnregisterEvent("SOULBIND_PENDING_CONDUIT_CHANGED")
-end
+	-- if isRetail then
+		-- addon:RegisterEvent("PLAYER_TALENT_UPDATE", ScanTalents_Retail)
+		-- addon:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED", OnPlayerSpecializationChanged)
+		
+	-- else
+		-- addon:RegisterEvent("CHARACTER_POINTS_CHANGED", ScanTalents_NonRetail)
+	-- end
+end)

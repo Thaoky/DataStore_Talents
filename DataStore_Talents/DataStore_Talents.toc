@@ -1,15 +1,16 @@
-## Interface: 100205
+## Interface: 100206
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2024.01.31
+## Version: 2024.04.14
 ## Dependencies: DataStore
-## OptionalDeps: Ace3
-## SavedVariables: DataStore_TalentsDB, DataStore_TalentsRefDB
+## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Covenant, DataStore_Talents_Conduits, DataStore_Talents_ConduitSpecs, DataStore_Talents_Soulbinds, DataStore_Talents_Reasons
 ## X-Category: Interface Enhancements
-## X-Embeds: Ace3
+
 
 Enum.lua
 DataStore_Talents.lua
+API\Covenant.lua
+API\StatPriorities.lua
