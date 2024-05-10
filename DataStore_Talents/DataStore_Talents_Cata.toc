@@ -1,4 +1,4 @@
-## Interface: 11502
+## Interface: 40400
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
@@ -6,10 +6,8 @@
 ## Author: Thaoky (EU-Marécages de Zangar)
 ## Version: 2024.05.10
 ## Dependencies: DataStore
-## OptionalDeps: Ace3
-## SavedVariables: DataStore_TalentsDB, DataStore_TalentsRefDB
+## SavedVariables: DataStore_Talents_Characters
 ## X-Category: Interface Enhancements
-## X-Embeds: Ace3
 
 Enum.lua
 DataStore_Talents.lua

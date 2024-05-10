@@ -31,9 +31,6 @@ local AddonDB_Defaults = {
 				
 				-- ** Retail **
 				Specializations = {},
-				activeSpecIndex = nil,
-				activeSpecName = nil,
-				activeSpecRole = nil,
 
 			}
 		}
@@ -194,11 +191,7 @@ local function ScanTalents_Retail()
 	end
 	
 	local specIndex = GetSpecialization()
-	local _, specName, _, _, role = GetSpecializationInfo(specIndex)
-	
-	char.activeSpecIndex = specIndex
-	char.activeSpecName = specName
-	char.activeSpecRole = role
+
 	char.Specializations[specIndex] = attrib
 end
 
@@ -440,10 +433,6 @@ local function _GetSpecializationTierChoice(character, specialization, row)
 	end
 end
 
-local function _GetActiveSpecInfo(character)
-	return character.activeSpecName or "", character.activeSpecIndex, character.activeSpecRole
-end
-
 local function _IterateTalentTiers(callback)
 	for tierIndex, level in ipairs(enum.TalentTiersSorted) do
 		callback(tierIndex, level)
@@ -462,7 +451,7 @@ if isRetail then
 	PublicMethods.GetSpecializationInfo = _GetSpecializationInfo
 	PublicMethods.GetTalentInfo = _GetTalentInfo_Retail
 	PublicMethods.GetSpecializationTierChoice = _GetSpecializationTierChoice
-	PublicMethods.GetActiveSpecInfo = _GetActiveSpecInfo
+
 	PublicMethods.IterateTalentTiers = _IterateTalentTiers
 
 else
@@ -498,7 +487,7 @@ DataStore:OnAddonLoaded(addonName, function()
 
 	-- if isRetail then
 		-- DataStore:SetCharacterBasedMethod("GetSpecializationTierChoice")
-		-- DataStore:SetCharacterBasedMethod("GetActiveSpecInfo")
+
 	-- else
 		-- DataStore:SetCharacterBasedMethod("GetTalentRank")
 		-- DataStore:SetCharacterBasedMethod("GetNumPointsSpent")
