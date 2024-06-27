@@ -6,16 +6,49 @@ local DataStore = DataStore
 local GetSpecialization, GetSpecializationInfo = GetSpecialization, GetSpecializationInfo
 
 local bit64 = LibStub("LibBit64")
+local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
 
 -- *** Scanning functions ***
-local function ScanSpecialization()
-	local char = addon.ThisCharacter
-	
+local function GetSpecInfo_Retail()
 	local specID = GetSpecialization()
 	local _, specName, _, _, role = GetSpecializationInfo(specID)
 	
+	roleID = DataStore:StoreToSetAndList(specInfos.Roles, role)
+	
+	return specID, specName, roleID
+end
+
+local function GetSpecInfo_Cataclysm()
+	-- Non-retail does not know specializations, roles, etc..
+	-- So just scan, and the active spec is the one with the most points.
+	local _, highestSpecName, _, _, highestSpecPoints = GetTalentTabInfo(1)
+	local highestSpecIndex = 1
+	
+	for tabNum = 2, GetNumTalentTabs() do						-- all tabs
+		local _, name, _, _, pointsSpent = GetTalentTabInfo(tabNum)
+		
+		if pointsSpent and pointsSpent > highestSpecPoints then
+			highestSpecName = name
+			highestSpecPoints = pointsSpent
+			highestSpecIndex = tabNum
+		end
+	end
+
+	return highestSpecIndex, highestSpecName, 0
+end
+
+local function ScanSpecialization()
+	local char = addon.ThisCharacter
+	
+	local specID, specName, roleID
+	
+	if isRetail then
+		specID, specName, roleID = GetSpecInfo_Retail()
+	else
+		specID, specName, roleID = GetSpecInfo_Cataclysm()
+	end
+	
 	local nameID = DataStore:StoreToSetAndList(specInfos.Names, specName)
-	local roleID = DataStore:StoreToSetAndList(specInfos.Roles, role)
 	
 	specializations[DataStore.ThisCharID] = specID 	-- bits 0-2 : active spec index
 		+ bit64:LeftShift(roleID, 3)						-- bits 3-4 : role id (damage/tank/heal)
@@ -67,5 +100,9 @@ end)
 
 DataStore:OnPlayerLogin(function()
 	addon:ListenTo("PLAYER_ALIVE", ScanSpecialization)
-	addon:ListenTo("PLAYER_SPECIALIZATION_CHANGED", ScanSpecialization)
+	if isRetail then
+		addon:ListenTo("PLAYER_SPECIALIZATION_CHANGED", ScanSpecialization)
+	else
+		addon:ListenTo("CHARACTER_POINTS_CHANGED", ScanSpecialization)
+	end
 end)

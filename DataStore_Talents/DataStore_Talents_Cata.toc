@@ -4,10 +4,11 @@
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2024.06.23
+## Version: 2024.06.27
 ## Dependencies: DataStore
-## SavedVariables: DataStore_Talents_Characters
+## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos
 ## X-Category: Interface Enhancements
 
 Enum.lua
 DataStore_Talents.lua
+API\Specialization.lua
