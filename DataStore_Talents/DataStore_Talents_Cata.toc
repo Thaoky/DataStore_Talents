@@ -4,7 +4,7 @@
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2024.07.28
+## Version: 2024.08.14
 ## Dependencies: DataStore
 ## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos
 ## X-Category: Interface Enhancements
