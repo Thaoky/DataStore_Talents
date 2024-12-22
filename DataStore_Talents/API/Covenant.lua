@@ -230,7 +230,7 @@ local function _GetRecommendedCovenant(class, specialization)
 	end
 end
 
-DataStore:OnAddonLoaded(addonName, function() 
+AddonFactory:OnAddonLoaded(addonName, function() 
 	DataStore:RegisterTables({
 		addon = addon,
 		characterTables = {
@@ -262,7 +262,7 @@ DataStore:OnAddonLoaded(addonName, function()
 	DataStore:RegisterMethod(addon, "GetRecommendedCovenant", _GetRecommendedCovenant)
 end)
 
-DataStore:OnPlayerLogin(function()
+AddonFactory:OnPlayerLogin(function()
 	addon:ListenTo("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", function(event, interactionType)
 		if interactionType == Enum.PlayerInteractionType.Soulbind then
 			OnInteractionStarted()

@@ -468,7 +468,7 @@ else
 	PublicMethods.GetMainSpecialization = _GetMainSpecialization
 end
 
-DataStore:OnAddonLoaded(addonName, function() 
+AddonFactory:OnAddonLoaded(addonName, function() 
 	DataStore:RegisterModule({
 		addon = addon,
 		addonName = addonName,
@@ -495,7 +495,7 @@ DataStore:OnAddonLoaded(addonName, function()
 	-- end
 end)
 
-DataStore:OnPlayerLogin(function() 
+AddonFactory:OnPlayerLogin(function() 
 	-- addon:RegisterEvent("PLAYER_ALIVE", OnPlayerAlive)
 	
 	-- if isRetail then

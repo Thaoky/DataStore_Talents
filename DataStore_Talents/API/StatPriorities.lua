@@ -95,6 +95,6 @@ local function _GetStatPriority(class, specialization)
 	end
 end
 
-DataStore:OnAddonLoaded(addonName, function() 
+AddonFactory:OnAddonLoaded(addonName, function() 
 	DataStore:RegisterMethod(addon, "GetStatPriority", _GetStatPriority)
 end)

@@ -73,7 +73,7 @@ local function _GetActiveSpecInfo(characterID)
 end
 
 
-DataStore:OnAddonLoaded(addonName, function()
+AddonFactory:OnAddonLoaded(addonName, function()
 	DataStore:RegisterTables({
 		addon = addon,
 		rawTables = {
@@ -98,7 +98,7 @@ DataStore:OnAddonLoaded(addonName, function()
 	DataStore:CreateSetAndList(specInfos.Roles)
 end)
 
-DataStore:OnPlayerLogin(function()
+AddonFactory:OnPlayerLogin(function()
 	addon:ListenTo("PLAYER_ALIVE", ScanSpecialization)
 	if isRetail then
 		addon:ListenTo("PLAYER_SPECIALIZATION_CHANGED", ScanSpecialization)
