@@ -14,3 +14,4 @@ DataStore_Talents.lua
 API\Specialization.lua
 API\Covenant.lua
 API\StatPriorities.lua
+API\Glyphs.lua
