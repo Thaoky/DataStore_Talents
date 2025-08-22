@@ -1,14 +1,15 @@
-## Interface: 40402
+## Interface: 50500
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2025.02.28
+## Version: 2025.08.21
 ## Dependencies: AddonFactory, DataStore
-## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos
+## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos, DataStore_Talents_Glyphs
 ## X-Category: Interface Enhancements
 
 Enum.lua
 DataStore_Talents.lua
 API\Specialization.lua
+API\Glyphs.lua

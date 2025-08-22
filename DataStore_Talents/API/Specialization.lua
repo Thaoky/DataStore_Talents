@@ -7,13 +7,14 @@ local GetSpecialization, GetSpecializationInfo = GetSpecialization, GetSpecializ
 
 local bit64 = LibStub("LibBit64")
 local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
-
+local isCataclysm = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM)
+local isMists = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA																							  
 -- *** Scanning functions ***
 local function GetSpecInfo_Retail()
-	local specID = GetSpecialization()
-	local _, specName, _, _, role = GetSpecializationInfo(specID)
-	
-	roleID = DataStore:StoreToSetAndList(specInfos.Roles, role)
+	local specID = C_SpecializationInfo.GetSpecialization()
+	local _, specName, _, _, role = C_SpecializationInfo.GetSpecializationInfo(specID)
+
+	local roleID = DataStore:StoreToSetAndList(specInfos.Roles, role)
 	
 	return specID, specName, roleID
 end
@@ -42,9 +43,9 @@ local function ScanSpecialization()
 	
 	local specID, specName, roleID
 	
-	if isRetail then
+	if isRetail or isMists then
 		specID, specName, roleID = GetSpecInfo_Retail()
-	else
+	elseif isCataclysm then
 		specID, specName, roleID = GetSpecInfo_Cataclysm()
 	end
 	
@@ -99,8 +100,9 @@ AddonFactory:OnAddonLoaded(addonName, function()
 end)
 
 AddonFactory:OnPlayerLogin(function()
+	addon:ListenTo("PLAYER_ENTERING_WORLD", ScanSpecialization)
 	addon:ListenTo("PLAYER_ALIVE", ScanSpecialization)
-	if isRetail then
+	if isRetail or isMists then
 		addon:ListenTo("PLAYER_SPECIALIZATION_CHANGED", ScanSpecialization)
 	else
 		addon:ListenTo("CHARACTER_POINTS_CHANGED", ScanSpecialization)
