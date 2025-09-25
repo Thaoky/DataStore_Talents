@@ -4,7 +4,7 @@
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2025.08.21
+## Version: 2025.09.25
 ## Dependencies: AddonFactory, DataStore
 ## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos, DataStore_Talents_Covenant, DataStore_Talents_Conduits, DataStore_Talents_ConduitSpecs, DataStore_Talents_Soulbinds, DataStore_Talents_Reasons
 ## X-Category: Interface Enhancements
