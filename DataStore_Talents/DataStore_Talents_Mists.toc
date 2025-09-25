@@ -1,10 +1,10 @@
-## Interface: 50500
+## Interface: 50501
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2025.08.21
+## Version: 2025.09.25
 ## Dependencies: AddonFactory, DataStore
 ## SavedVariables: DataStore_Talents_Characters, DataStore_Talents_Specializations, DataStore_Talents_SpecializationInfos, DataStore_Talents_Glyphs
 ## X-Category: Interface Enhancements
