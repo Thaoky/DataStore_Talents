@@ -47,6 +47,8 @@ local function ScanSpecialization()
 		specID, specName, roleID = GetSpecInfo_Retail()
 	elseif isCataclysm then
 		specID, specName, roleID = GetSpecInfo_Cataclysm()
+	else
+		specID, specName, roleID = GetSpecInfo_Cataclysm()
 	end
 	
 	local nameID = DataStore:StoreToSetAndList(specInfos.Names, specName)
