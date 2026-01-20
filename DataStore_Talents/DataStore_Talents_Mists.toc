@@ -1,4 +1,4 @@
-## Interface: 50501
+## Interface: 50503
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
@@ -13,3 +13,4 @@ Enum.lua
 DataStore_Talents.lua
 API\Specialization.lua
 API\Glyphs.lua
+
