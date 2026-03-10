@@ -91,9 +91,8 @@ local function GetSpecInfo_TalentRows()
 
 	local currentSpecGroup = C_SpecializationInfo.GetActiveSpecGroup()
 	char.CurrentSpecGroup = currentSpecGroup
-	char.SpecGroup[currentSpecGroup].SpecIndex = C_SpecializationInfo.GetSpecializationInfo(C_SpecializationInfo.GetSpecialization())
-	
 	Initialize_Specialization(char, currentSpecGroup)
+	char.SpecGroup[currentSpecGroup].SpecIndex = C_SpecializationInfo.GetSpecializationInfo(C_SpecializationInfo.GetSpecialization())
 
 	-- Start the reference tree
 	-- Reset the talent trees if the version was changed (who knows what they changed)
