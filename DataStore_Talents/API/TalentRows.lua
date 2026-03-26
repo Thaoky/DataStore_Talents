@@ -207,6 +207,7 @@ AddonFactory:OnAddonLoaded(addonName, function()
 	})
 
 	DataStore_TalentsRefDB = DataStore_TalentsRefDB or ReferenceDB_Defaults
+	if not DataStore_TalentsRefDB.global then DataStore_TalentsRefDB = ReferenceDB_Defaults end
 
 	addon.ref = DataStore_TalentsRefDB
 	if not addon.ref.global then

@@ -347,6 +347,7 @@ AddonFactory:OnAddonLoaded(addonName, function()
 
 	DataStore_TalentsDB = DataStore_TalentsDB or {}
 	DataStore_TalentsRefDB = DataStore_TalentsRefDB or ReferenceDB_Defaults
+	if not DataStore_TalentsRefDB.global then DataStore_TalentsRefDB = ReferenceDB_Defaults end
 
 	addon.ref = DataStore_TalentsRefDB
 	thisCharacter = DataStore:GetCharacterDB("DataStore_Talents_Characters", true)
