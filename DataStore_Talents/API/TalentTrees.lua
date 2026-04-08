@@ -257,12 +257,15 @@ local function _GetTalentPrereqs(class, tree, index)
 end
 
 local function _GetTalentRank(character, tree, index, specGroup)
-	if not character.SpecGroup then return nil end
-	return character.SpecGroup[specGroup or 1].TalentTrees[tree][index]
+	specGroup = specGroup or character.CurrentSpecGroup
+	if not specGroup then return nil end
+	return character.SpecGroup[specGroup].TalentTrees[tree][index]
 end
 
 local function _GetNumPointsSpent(character, tree, specGroup)
 	local index = 1
+	specGroup = specGroup or character.CurrentSpecGroup
+	if not specGroup then return 0 end
 	--for treeName in _GetClassTrees(character.Class) do
 	for treeName in DataStore:GetClassTrees(character.Class) do
 		if treeName == tree then
@@ -272,10 +275,8 @@ local function _GetNumPointsSpent(character, tree, specGroup)
 	end
 	
 	if index == 4 then return end				-- = 4 means tree was not found
-	
 	-- index = index + ((specNum-1) * 3)
-	if not character.SpecGroup then return 0 end
-	return select(index, strsplit(",", character.SpecGroup[specGroup or 1].PointsSpent or "")) or 0
+	return select(index, strsplit(",", character.SpecGroup[specGroup].PointsSpent or "")) or 0
 end
 
 local function _GetActiveSpecInfo(character)
