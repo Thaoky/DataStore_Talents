@@ -139,6 +139,7 @@ local function GetSpecInfo_Burning_Crusade()
 	return highestSpecIndex, highestSpecName, 0
 end
 
+--[[
 function Test()
 	local query = {
 		["specializationIndex"] = 1,
@@ -159,6 +160,7 @@ function Test()
 		talentInfo = C_SpecializationInfo.GetTalentInfo(query)
 	end
 end
+--]]
 
 local function ScanTalents_NonRetail()
 	local char = addon.ThisCharacter
