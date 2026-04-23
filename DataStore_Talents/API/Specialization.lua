@@ -1,7 +1,5 @@
 -- Only valid for expansions that use specializations
---if LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_MISTS_OF_PANDARIA then return end
-if LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_MISTS_OF_PANDARIA or LE_EXPANSION_LEVEL_CURRENT <= LE_EXPANSION_SHADOWLANDS then return end
-
+if LE_EXPANSION_LEVEL_CURRENT <= LE_EXPANSION_MISTS_OF_PANDARIA then return end
 
 local addonName, addon = ...
 local specializations
@@ -32,11 +30,7 @@ end
 local function ScanSpecialization()
 	local specID, specName, roleID
 	
-	if isRetail or isMists then
-		specID, specName, roleID = GetSpecInfo_Retail()
-	else
-		specID, specName, roleID = GetSpecInfo_Cataclysm()
-	end
+	specID, specName, roleID = GetSpecInfo_Retail()
 
 	if not specName then return end -- No specializations for this character
 
