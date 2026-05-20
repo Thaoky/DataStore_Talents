@@ -186,6 +186,21 @@ local function _GetSpecIndex(character, specGroup)
 	return character.SpecGroup[specGroup or character.CurrentSpecGroup].SpecIndex
 end
 
+local function _GetActiveSpecInfo(character)
+	local mainTree = NONE
+	-- These can be updated by brute force in non-specialization versions
+	local specID, specRole = 0, ""
+
+	if not character.CurrentSpecGroup then return mainTree, specID, specRole end
+
+	-- Low level alts may not have any data yet ..
+	if character.SpecGroup[character.CurrentSpecGroup] and character.SpecGroup[character.CurrentSpecGroup].SpecIndex then
+		specID, mainTree, _, _, specRole = GetSpecializationInfoByID(character.SpecGroup[character.CurrentSpecGroup].SpecIndex)
+	end
+
+	return mainTree or "", specID, specRole
+end
+
 local PublicMethods = {
 	GetReferenceTable = _GetReferenceTable,
 	GetClassReference = _GetClassReference,
@@ -201,7 +216,8 @@ AddonFactory:OnAddonLoaded(addonName, function()
 			["DataStore_Talents_Characters"] = {
 				GetTalents = _GetTalents,
 				GetSelectedTalent = _GetSelectedTalent,
-				GetSpecIndex = _GetSpecIndex
+				GetSpecIndex = _GetSpecIndex,
+				GetActiveSpecInfo = _GetActiveSpecInfo
 			},
 		}
 	})
