@@ -1,4 +1,4 @@
-## Interface: 11508
+## Interface: 20505
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
@@ -10,18 +10,6 @@
 ## SavedVariables: DataStore_Talents_Characters, DataStore_TalentsDB, DataStore_TalentsRefDB
 ## X-Category: Interface Enhancements
 ## X-Embeds: Ace3
-
-## Category: Libraries
-## Category-deDE: Bibliotheken
-## Category-esES: Bibliotecas
-## Category-esMX: Bibliotecas
-## Category-frFR: Bibliothèques
-## Category-itIT: Librerie
-## Category-koKR: 라이브러리
-## Category-ptBR: Bibliotecas
-## Category-ruRU: Библиотеки
-## Category-zhCN: 函数库
-## Category-zhTW: 函式庫
 
 Enum.lua
 DataStore_Talents.lua

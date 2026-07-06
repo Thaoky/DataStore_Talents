@@ -10,6 +10,19 @@ local thisCharacter
 local DataStore = DataStore
 
 local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
+local isMists = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA
+local isCataclysm = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM)
+local isBurningCrusade = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE)
+local isClassic = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CLASSIC)
+
+-- GetNumSpecGroups is available in Classic/TBC, but throws an error when used
+-- GetNumTalentGroups is available in Mists, but throws an error when used
+local function _GetNumSpecGroups()
+	if isClassic or isBurningCrusade then
+		return GetNumTalentGroups()
+	end
+	return GetNumSpecGroups()
+end
 
 local enum = DataStore.Enum
 local bit64 = LibStub("LibBit64")
@@ -22,48 +35,37 @@ local AddonDB_Defaults = {
 				Class = nil,							-- englishClass
 				
 				-- ** Non-retail **
+				--[[
 				PointsSpent = "",		-- "51,5,15 ...	" 	3 numbers for primary spec, 3 for secondary, comma separated
 				TalentTrees = {
 					['*'] = {		-- "Fire"	= Mage Fire tree, secondary
 						['*'] = 0
 					}
-				},				
+				},
+				]]
+				
+				CurrentSpecGroup = 1, 		-- default to the first (or only) specialization group 
+				SpecGroup = {
+					['*'] = { 				-- 1 or 2, depending on dual talent spec availability
+						PointsSpent = "",	-- "51,5,15 ...	" 	3 numbers for primary spec, 3 for secondary, comma separated
+						SpecName = "",
+						SpecIndex = "",		-- Index in the 'Order'
+						TalentTrees = {		-- Classic/Burning Crusade
+							['*'] = {		-- "Fire"	= Mage Fire tree, secondary
+								['*'] = 0
+							}
+						},
+						TalentRows = {
+							['*'] = 0		-- [Row] [column selected]
+						},
+					},
+				},
 				
 				-- ** Retail **
 				Specializations = {},
 
 			}
 		}
-	}
-}
-
--- This table saved reference data required to rebuild a talent tree for a class when logged in under another class.
--- The API does not provide that ability, but saving and reusing is fine
-local ReferenceDB_Defaults = {
-	global = {
-		['*'] = {							-- "englishClass" like "MAGE", "DRUID" etc..
-			Version = nil,					-- build number under which this class ref was saved
-			Locale = nil,					-- locale under which this class ref was saved
-			Specializations = {
-				['*'] = {					-- tree name
-					id = nil,
-					icon = nil,
-					name = nil,
-					talents = {},			-- name, icon, max rank etc..for talent x in this tree
-				},
-			},
-			
-			-- For non-retail
-			Order = nil,
-			Trees = {
-				['*'] = {					-- tree name
-					icon = nil,
-					background = nil,
-					talents = {},			-- name, icon, max rank etc..for talent x in this tree
-					prereqs = {}			-- prerequisites
-				},
-			}
-		},
 	}
 }
 
@@ -77,9 +79,89 @@ local function GetVersion()
 	return tonumber(version)
 end
 
-local BACKGROUND_PATH = "Interface\\TalentFrame\\"
+
 
 -- *** Scanning functions ***
+local function GetSpecInfo_Mists()
+	-- Non-retail does not know specializations, roles, etc..
+	-- So just scan, and the active spec is the one with the most points.
+	local _, highestSpecName, _, _, highestSpecPoints = GetTalentTabInfo(1)
+	local highestSpecIndex = 1
+	
+	for tabNum = 2, GetNumTalentTabs() do						-- all tabs
+		local _, name, _, _, pointsSpent = GetTalentTabInfo(tabNum)
+		
+		if pointsSpent and pointsSpent > highestSpecPoints then
+			highestSpecName = name
+			highestSpecPoints = pointsSpent
+			highestSpecIndex = tabNum
+		end
+	end
+
+	return highestSpecIndex, highestSpecName, 0
+end
+
+local function GetSpecInfo_Cataclysm()
+	-- Non-retail does not know specializations, roles, etc..
+	-- So just scan, and the active spec is the one with the most points.
+	local _, highestSpecName, _, _, highestSpecPoints = GetTalentTabInfo(1)
+	local highestSpecIndex = 1
+	
+	for tabNum = 2, GetNumTalentTabs() do						-- all tabs
+		local _, name, _, _, pointsSpent = GetTalentTabInfo(tabNum)
+		
+		if pointsSpent and pointsSpent > highestSpecPoints then
+			highestSpecName = name
+			highestSpecPoints = pointsSpent
+			highestSpecIndex = tabNum
+		end
+	end
+
+	return highestSpecIndex, highestSpecName, 0
+end
+
+local function GetSpecInfo_Burning_Crusade()
+	-- Non-retail does not know specializations, roles, etc..
+	-- So just scan, and the active spec is the one with the most points.
+	local _, highestSpecName, _, _, highestSpecPoints = GetTalentTabInfo(1)
+	local highestSpecIndex = 1
+	
+	for tabNum = 2, GetNumTalentTabs() do						-- all tabs
+		local _, name, _, _, pointsSpent = GetTalentTabInfo(tabNum)
+		
+		if pointsSpent and pointsSpent > highestSpecPoints then
+			highestSpecName = name
+			highestSpecPoints = pointsSpent
+			highestSpecIndex = tabNum
+		end
+	end
+
+	return highestSpecIndex, highestSpecName, 0
+end
+
+--[[
+function Test()
+	local query = {
+		["specializationIndex"] = 1,
+		["target"] = "player",
+		["talentIndex"] = 1
+	}
+
+	local talentInfo = C_SpecializationInfo.GetTalentInfo(query)
+	while talentInfo ~= nil do -- loop the tree
+		print("-- Spec", query["specializationIndex"])
+		while talentInfo ~= nil do -- loop the tree
+			print(talentInfo.name)
+			query["talentIndex"] = query["talentIndex"] + 1
+			talentInfo = C_SpecializationInfo.GetTalentInfo(query)
+		end
+		query["specializationIndex"] = query["specializationIndex"] + 1
+		query["talentIndex"] = 1
+		talentInfo = C_SpecializationInfo.GetTalentInfo(query)
+	end
+end
+--]]
+
 local function ScanTalents_NonRetail()
 	local char = addon.ThisCharacter
 	local _, englishClass = UnitClass("player")
@@ -232,214 +314,17 @@ local function ScanTalentReference_Retail()
 end
 
 
--- *** Event Handlers ***
-local function OnPlayerAlive()
-	if isRetail then
-		ScanTalents_Retail()
-		ScanTalentReference_Retail()
-	else
-		ScanTalents_NonRetail()
-		ScanTalentReference_NonRetail()
-	end
-end
-
-local function OnPlayerSpecializationChanged()
-	ScanTalents_Retail()
-	ScanTalentReference_Retail()
-end
 
 
 -- ** Mixins **
-local function _GetReferenceTable()
-	return addon.ref.global
-end
-
-local function	_GetClassReference(class)
-	if type(class) == "string" then
-		return addon.ref.global[class]
-	end
-end
-
-local function _IsClassKnown(class)
-	class = class or ""	-- if by any chance nil is passed, trap it to make sure the function does not fail, but returns nil anyway
-	
-	local ref = _GetClassReference(class)
-	if ref.Locale or ref.Order then		-- if the Locale field is not nil, we have data for this class (or .Order for non-retail)
-		return true
-	end
-end
-
-local function _ImportClassReference(class, data)
-	assert(type(class) == "string")
-	assert(type(data) == "table")
-	
-	addon.ref.global[class] = data
-end
 
 -- ** Mixins - Non-Retail **
-local function _GetTreeReference(class, tree)
-	assert(type(class) == "string")
-	assert(type(tree) == "string")
-	return addon.ref.global[class].Trees[tree]
-end
-
-local function _GetClassTrees(class)
-	assert(type(class) == "string")
-	
-	local ref = _GetClassReference(class)
-	local order = ref.Order
-	if order then
-		return order:gmatch("([^,]+)")
-	end
-	-- to do, add a return value that does not require validity testing by the caller
-end
-
-local function _GetTreeInfo(class, tree)
-	local t = _GetTreeReference(class, tree)
-	
-	if t then
-		return t.icon, format("%s%s", BACKGROUND_PATH, t.background)
-	end
-end
-
-local function _GetTreeNameByID(class, id)
-	-- returns the name of tree "id" for a given class
-	assert(type(class) == "string")
-	
-	local index = 1
-	for name in _GetClassTrees(class) do
-		if index == id then
-			return name
-		end
-		index = index + 1
-	end
-end
-
-local function _GetTalentLink(id, rank, name)
-	return format("|cff4e96f7|Htalent:%s:%s|h[%s]|h|r", id, (rank-1), name)
-end
-
-local function _GetNumTalents(class, tree)
-	-- returns the number of talents in a given tree
-	local t = _GetTreeReference(class, tree)
-
-	if t then
-		return #t.talents
-	end
-end
-
-local function _GetTalentInfo_NonRetail(class, tree, index)
-	local t = _GetTreeReference(class, tree)
-	local talentInfo = t.talents[index]
-	
-	if not talentInfo then return end
-	
-	-- "Improved Frostbolt|135846|1|2|5", -- [2]
-	local name, icon, tier, column, maximumRank	= strsplit("|", talentInfo)
-	
-	-- 0 used to be tonumber(id), keep for compatibility
-	return 0, name, icon, tonumber(tier), tonumber(column), tonumber(maximumRank)
-end
-
-local function _GetTalentRank(character, tree, index)
-	return character.TalentTrees[tree][index]
-end
-
-local function _GetNumPointsSpent(character, tree)
-	local index = 1
-	for treeName in _GetClassTrees(character.Class) do
-		if treeName == tree then
-			break
-		end
-		index = index + 1
-	end
-	
-	if index == 4 then return end				-- = 4 means tree was not found
-	
-	-- index = index + ((specNum-1) * 3)
-	
-	return select(index, strsplit(",", character.PointsSpent)) or 0
-end
-	
-local function _GetTalentPrereqs(class, tree, index)
-	local t = _GetTreeReference(class, tree)
-	local prereq = t.prereqs[index]
-		
-	if prereq then
-		local prereqTier, prereqColumn = strsplit("|", prereq)
-		return tonumber(prereqTier), tonumber(prereqColumn)
-	end
-end
-
-local function _GetMainSpecialization(character)
-	local index = 1
-	local numPoints = 0
-	local mainTree = NONE
-	
-	-- Low level alts may not have any data yet ..
-	if not character.PointsSpent or character.PointsSpent == "" or not character.Class then
-		return mainTree
-	end
-	
-	local points = {strsplit(",", character.PointsSpent)}
-	
-	for treeName in _GetClassTrees(character.Class) do
-		points[index] = tonumber(points[index])
-		
-		if points[index] > numPoints then
-			mainTree = treeName
-			numPoints = points[index]
-		end
-		index = index + 1
-	end
-	
-	return mainTree
-end
-
 
 -- ** Mixins - Retail **
-local function _GetSpecializationReference(class, spec)
-	assert(type(class) == "string")
-	assert(type(spec) == "number")
-	
-	return addon.ref.global[class].Specializations[spec]
-end
 
-local function _GetSpecializationInfo(class, specialization)
-	local spec = _GetSpecializationReference(class, specialization)
-	if spec and spec.id then 
-		return GetSpecializationInfoByID(spec.id)
-	end
-end
+local PublicMethods = {}
 
-local function _GetTalentInfo_Retail(class, specialization, row, column)
-	local spec = _GetSpecializationReference(class, specialization)
-	if not spec then return end
-	
-	local index = ((row - 1) * 3) + column		-- ex: row 2, column 1 = index 4
-	local talentID = spec.talents[index]
-	
-	if talentID then
-		-- id, name, texture, ...
-		return GetTalentInfoByID(talentID)
-	end
-end
-
-local function _GetSpecializationTierChoice(character, specialization, row)
-	local attrib = character.Specializations[specialization]
-	
-	if attrib then
-		return bAnd(RShift(attrib, (row-1)*2), 3)
-	end
-end
-
-local function _IterateTalentTiers(callback)
-	for tierIndex, level in ipairs(enum.TalentTiersSorted) do
-		callback(tierIndex, level)
-	end
-end
-
-
+--[[
 local PublicMethods = {
 	GetReferenceTable = _GetReferenceTable,
 	GetClassReference = _GetClassReference,
@@ -462,26 +347,45 @@ else
 	PublicMethods.GetTalentLink = _GetTalentLink
 	PublicMethods.GetNumTalents = _GetNumTalents
 	PublicMethods.GetTalentInfo = _GetTalentInfo_NonRetail
-	PublicMethods.GetTalentRank = _GetTalentRank
-	PublicMethods.GetNumPointsSpent = _GetNumPointsSpent
+	--PublicMethods.GetTalentRank = _GetTalentRank
+	--PublicMethods.GetNumPointsSpent = _GetNumPointsSpent
 	PublicMethods.GetTalentPrereqs = _GetTalentPrereqs
-	PublicMethods.GetMainSpecialization = _GetMainSpecialization
+	--PublicMethods.GetMainSpecialization = _GetMainSpecialization
 end
+]]
 
-AddonFactory:OnAddonLoaded(addonName, function() 
+AddonFactory:OnAddonLoaded(addonName, function()
+	--DataStore:RegisterMethod(addon, publicMethod, actualMethod)
+	DataStore:RegisterMethod(addon, "GetNumSpecGroups", _GetNumSpecGroups)
+	----[[
 	DataStore:RegisterModule({
 		addon = addon,
 		addonName = addonName,
+		--[[
 		characterTables = {
 			["DataStore_Talents_Characters"] = {
-
+				GetTalentRank = _GetTalentRank,
+				GetNumPointsSpent = _GetNumPointsSpent,
+				GetMainSpecialization = _GetMainSpecialization
 			},
 		}
+		]]
 	})
+	--]]
+--[[
+	if not isRetail then
+		for publicMethod, actualMethod in pairs(PublicMethods) do
+			DataStore:RegisterMethod(addon, publicMethod, actualMethod)
+		end
 
+		DataStore_TalentsDB = DataStore_TalentsDB or {}
+		DataStore_TalentsRefDB = DataStore_TalentsRefDB or ReferenceDB_Defaults
+		--DataStore_TalentsRefDB = ReferenceDB_Defaults --DAC DEBUG!!
 
-	-- addon.db = LibStub("AceDB-3.0"):New(addonName .. "DB", AddonDB_Defaults)
-	-- addon.ref = LibStub("AceDB-3.0"):New(addonName .. "RefDB", ReferenceDB_Defaults)
+		addon.ref = DataStore_TalentsRefDB
+		thisCharacter = DataStore:GetCharacterDB("DataStore_Talents_Characters", true)
+	end
+	]]
 
 	-- DataStore:RegisterModule(addonName, addon, PublicMethods)
 
@@ -495,7 +399,12 @@ AddonFactory:OnAddonLoaded(addonName, function()
 	-- end
 end)
 
-AddonFactory:OnPlayerLogin(function() 
+AddonFactory:OnPlayerLogin(function()
+	--[[
+	addon:ListenTo("PLAYER_ENTERING_WORLD", OnPlayerAlive)
+	addon:ListenTo("CHARACTER_POINTS_CHANGED", OnPlayerAlive)
+	addon:ListenTo("PLAYER_TALENT_UPDATE", OnPlayerAlive)
+	]]
 	-- addon:RegisterEvent("PLAYER_ALIVE", OnPlayerAlive)
 	
 	-- if isRetail then
