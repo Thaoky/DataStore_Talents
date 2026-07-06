@@ -1,0 +1,30 @@
+## Interface: 120007
+## Title: DataStore_Quests
+## IconTexture: Interface\Icons\garrison_building_storehouse
+
+## Notes: Stores information about character quests
+## Author: Thaoky (EU-Marécages de Zangar)
+## Version: 2026.07.06
+## Dependencies: AddonFactory, DataStore
+## SavedVariables: DataStore_Quests_Characters, DataStore_Quests_History, DataStore_Quests_Progress, DataStore_Quests_Dailies, DataStore_Quests_Weeklies, DataStore_Quests_Colors, DataStore_Quests_Infos, DataStore_Quests_Options
+## X-Category: Interface Enhancements
+
+## Category: Libraries
+## Category-deDE: Bibliotheken
+## Category-esES: Bibliotecas
+## Category-esMX: Bibliotecas
+## Category-frFR: Bibliothèques
+## Category-itIT: Librerie
+## Category-koKR: 라이브러리
+## Category-ptBR: Bibliotecas
+## Category-ruRU: Библиотеки
+## Category-zhCN: 函数库
+## Category-zhTW: 函式庫
+
+locale.xml
+
+DataStore_Quests.lua
+API\History.lua
+API\Progress.lua
+API\Dailies.lua
+API\Weeklies.lua

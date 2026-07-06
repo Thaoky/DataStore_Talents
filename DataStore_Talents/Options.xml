@@ -1,0 +1,52 @@
+<Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
+	<Script file="Options.lua"></Script>
+
+	<Frame parentKey="QuestsOptions" parent="DataStoreFrames" hidden="true">
+		<Size x="615" y="306" />
+		<KeyValues>
+			<KeyValue key="module" value="DataStore_Quests" />
+		</KeyValues>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="DailyResetDropDownLabel" inherits="GameFontNormal" justifyH="LEFT">
+					<Size x="300" y="18" />
+					<Anchors>
+						<Anchor point="TOPLEFT" x="63" y="-100" />
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<CheckButton parentKey="TrackTurnIns" inherits="DataStoreToggleableOptionTemplate">
+				<Anchors> 
+					<Anchor point="TOPLEFT" x="40" y="-40" />
+				</Anchors>
+				<KeyValues>
+					<KeyValue key="option" value="TrackTurnIns" />
+					<KeyValue key="locLabel" value="TRACK_TURNINS_LABEL" />
+					<KeyValue key="locTitle" value="TRACK_TURNINS_TITLE" />
+					<KeyValue key="locEnabled" value="TRACK_TURNINS_ENABLED" />
+					<KeyValue key="locDisabled" value="TRACK_TURNINS_DISABLED" />
+				</KeyValues>
+			</CheckButton>
+			<CheckButton parentKey="AutoUpdateHistory" inherits="DataStoreToggleableOptionTemplate">
+				<Anchors> 
+					<Anchor point="TOP" relativeKey="$parent.TrackTurnIns" relativePoint="BOTTOM" x="0" y="-10" />
+				</Anchors>
+				<KeyValues>
+					<KeyValue key="option" value="AutoUpdateHistory" />
+					<KeyValue key="locLabel" value="AUTO_UPDATE_LABEL" />
+					<KeyValue key="locTitle" value="AUTO_UPDATE_TITLE" />
+					<KeyValue key="locEnabled" value="AUTO_UPDATE_ENABLED" />
+					<KeyValue key="locDisabled" value="AUTO_UPDATE_DISABLED" />
+				</KeyValues>
+			</CheckButton>
+			
+			<Frame parentKey="DailyResetDropDown" name="DataStore_Quests_DailyResetDropDown" inherits="UIDropDownMenuTemplate">
+				<Anchors> 
+					<Anchor point="TOPLEFT" relativeKey="$parent.DailyResetDropDownLabel" relativePoint="BOTTOMLEFT" x="-20" y="-8" />
+				</Anchors>
+			</Frame>
+		</Frames>
+	</Frame>
+</Ui>
