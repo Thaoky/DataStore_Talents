@@ -3,8 +3,7 @@ local thisCharacter
 local DataStore = DataStore
 
 local bit64 = LibStub("LibBit64")
---local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
-local isCataclysm = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM)
+local hasGlyphs = (LE_EXPANSION_LEVEL_CURRENT >= LE_EXPANSION_CATACLYSM and LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_BATTLE_FOR_AZEROTH)
 
 -- *** Scanning functions ***
 --local function ScanGlyphs(cleanLoad)
@@ -73,12 +72,12 @@ AddonFactory:OnAddonLoaded(addonName, function()
 	thisCharacter.Glyphs = thisCharacter.Glyphs or {}
 
 	DataStore_Talents_Glyphs = DataStore_Talents_Glyphs or {}
-	ScanGlyphs()	-- only for debug
+	--ScanGlyphs()	-- only for debug
 end)
 
 AddonFactory:OnPlayerLogin(function()
-	addon:ListenTo("PLAYER_ALIVE", ScanGlyphs)
-	if isCataclysm then
+	addon:ListenTo("PLAYER_ENTERING_WORLD", ScanGlyphs)
+	if hasGlyphs then
 		addon:ListenTo("CHARACTER_POINTS_CHANGED", ScanGlyphs)
 	end
 end)
