@@ -27,6 +27,40 @@ local function GetSpecInfo_Retail()
 	return specID, specName, roleID
 end
 
+local heroTalentsDB = nil
+
+local function ScanHeroTalents()
+	-- Fix #93: Scan hero talent spec (War Within+)
+	if not C_ClassTalents or not C_ClassTalents.GetActiveHeroTalentSpec then return end
+	local success, heroSpecID = pcall(C_ClassTalents.GetActiveHeroTalentSpec)
+	if not success or not heroSpecID then
+		if heroTalentsDB then
+			heroTalentsDB[DataStore.ThisCharID] = nil
+		end
+		return
+	end
+	
+	local heroSpecName = nil
+	if C_Traits and C_Traits.GetSubTreeInfo and C_ClassTalents.GetActiveConfigID then
+		local success2, configID = pcall(C_ClassTalents.GetActiveConfigID)
+		if success2 and configID then
+			local success3, subTreeInfo = pcall(C_Traits.GetSubTreeInfo, configID, heroSpecID)
+			if success3 and subTreeInfo and subTreeInfo.name then
+				heroSpecName = subTreeInfo.name
+			end
+		end
+	end
+	if not heroSpecName then
+		heroSpecName = format("Hero %d", heroSpecID)
+	end
+	
+	if heroTalentsDB then
+		local heroNameID = DataStore:StoreToSetAndList(specInfos.HeroNames, heroSpecName)
+		-- Store heroSpecID in bits 0-12, heroNameID in bits 13+
+		heroTalentsDB[DataStore.ThisCharID] = heroSpecID + bit64:LeftShift(heroNameID, 13)
+	end
+end
+
 local function ScanSpecialization()
 	local specID, specName, roleID
 	
@@ -39,6 +73,8 @@ local function ScanSpecialization()
 	specializations[DataStore.ThisCharID] = specID 	-- bits 0-2 : active spec index
 		+ bit64:LeftShift(roleID, 3)						-- bits 3-4 : role id (damage/tank/heal)
 		+ bit64:LeftShift(nameID, 5)						-- bits 5+  : spec name index
+
+	ScanHeroTalents()
 end
 
 local function OnPlayerSpecializationChanged()
@@ -89,6 +125,17 @@ local function _GetActiveSpecInfo(characterID)
 	local specRole = specInfos.Roles.List[roleID]
 
 	return specName or "", specID or 0, specRole or ""
+end
+
+local function _GetHeroTalentSpec(characterID)
+	-- Fix #93: Get hero talent spec name
+	if not heroTalentsDB then return nil end
+	local info = heroTalentsDB[characterID]
+	if not info then return nil end
+	local heroSpecID = bit64:GetBits(info, 0, 13)
+	local heroNameID = bit64:GetBits(info, 13, 12)
+	local heroName = specInfos.HeroNames and specInfos.HeroNames.List and specInfos.HeroNames.List[heroNameID]
+	return heroName or (heroSpecID and format("Hero %d", heroSpecID)) or nil, heroSpecID
 end
 
 local function _GetSpecializationReference(class, spec)
@@ -148,6 +195,7 @@ if isRetail then
 	PublicMethods.GetTalentInfo = _GetTalentInfo_Retail
 	PublicMethods.GetSpecializationTierChoice = _GetSpecializationTierChoice
 	PublicMethods.IterateTalentTiers = _IterateTalentTiers
+	PublicMethods.GetHeroTalentSpec = _GetHeroTalentSpec
 else
 	PublicMethods.GetTreeReference = _GetTreeReference
 	PublicMethods.GetClassTrees = _GetClassTrees
@@ -163,11 +211,15 @@ AddonFactory:OnAddonLoaded(addonName, function()
 	DataStore:RegisterTables({
 		addon = addon,
 		rawTables = {
-			"DataStore_Talents_SpecializationInfos"
+			"DataStore_Talents_SpecializationInfos",
+			"DataStore_Talents_HeroTalents"
 		},
 		characterIdTables = {
 			["DataStore_Talents_Specializations"] = {
 				GetActiveSpecInfo = _GetActiveSpecInfo,
+			},
+			["DataStore_Talents_HeroTalents"] = {
+				GetHeroTalentSpec = _GetHeroTalentSpec,
 			},
 		}
 	})
@@ -181,14 +233,17 @@ AddonFactory:OnAddonLoaded(addonName, function()
 	-- This table contains the specialization infos that are character specific
 	specializations = DataStore_Talents_Specializations
 	thisCharacter = specializations
+	heroTalentsDB = DataStore_Talents_HeroTalents
 
 	-- This table contains the specialization infos that are shared across all characters
 	specInfos = DataStore_Talents_SpecializationInfos
 	specInfos.Names = specInfos.Names or {}
 	specInfos.Roles = specInfos.Roles or {}
+	specInfos.HeroNames = specInfos.HeroNames or {}
 		
 	DataStore:CreateSetAndList(specInfos.Names)
 	DataStore:CreateSetAndList(specInfos.Roles)
+	DataStore:CreateSetAndList(specInfos.HeroNames)
 end)
 
 AddonFactory:OnPlayerLogin(function()
