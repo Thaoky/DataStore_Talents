@@ -1,5 +1,8 @@
+local _, _, _, version = GetBuildInfo()
+local isForever = (version > 16000 and version < 20000)
+
 -- Only valid for expansions that use specializations
-if LE_EXPANSION_LEVEL_CURRENT <= LE_EXPANSION_MISTS_OF_PANDARIA then return end
+if not isForever and LE_EXPANSION_LEVEL_CURRENT <= LE_EXPANSION_MISTS_OF_PANDARIA then return end
 
 local addonName, addon = ...
 local specializations
@@ -194,6 +197,7 @@ end)
 AddonFactory:OnPlayerLogin(function()
 	addon:ListenTo("PLAYER_ENTERING_WORLD", ScanSpecialization)
 	addon:ListenTo("PLAYER_ALIVE", ScanSpecialization)
+
 	if isRetail or isMists then
 		addon:ListenTo("PLAYER_SPECIALIZATION_CHANGED", ScanSpecialization)
 	else
