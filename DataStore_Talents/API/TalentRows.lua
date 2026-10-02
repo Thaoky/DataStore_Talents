@@ -53,7 +53,7 @@ local ReferenceDB_Defaults = {
 --]]
 
 -- ** Utility functions **
-local currentVersion = select(4, GetBuildInfo())
+local currentVersion = AddonFactory.buildVersion
 
 local function SetClassReferenceTalentDefaults(className)
 	addon.ref.global[className] = {}

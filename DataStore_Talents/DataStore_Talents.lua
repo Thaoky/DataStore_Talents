@@ -9,16 +9,14 @@ local thisCharacter
 
 local DataStore = DataStore
 
-local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
-local isMists = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA
-local isCataclysm = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM)
-local isBurningCrusade = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE)
-local isClassic = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CLASSIC)
+local isRetail = AddonFactory.isRetail
+local isTBC = AddonFactory.isTBC
+local isClassic = AddonFactory.isClassic
 
 -- GetNumSpecGroups is available in Classic/TBC, but throws an error when used
 -- GetNumTalentGroups is available in Mists, but throws an error when used
 local function _GetNumSpecGroups()
-	if isClassic or isBurningCrusade then
+	if isClassic or isTBC then
 		return GetNumTalentGroups()
 	end
 	return GetNumSpecGroups()
