@@ -1,5 +1,4 @@
-local _, _, _, version = GetBuildInfo()
-local isForever = (version > 16000 and version < 20000)
+local isForever = AddonFactory.isForever
 
 -- Only valid for expansions that use specializations
 if not isForever and LE_EXPANSION_LEVEL_CURRENT <= LE_EXPANSION_MISTS_OF_PANDARIA then return end
@@ -12,11 +11,9 @@ local DataStore = DataStore
 local GetSpecialization, GetSpecializationInfo = GetSpecialization, GetSpecializationInfo
 
 local bit64 = LibStub("LibBit64")
-local isRetail = (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE)
-local isMists = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA
-local isCataclysm = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM)
-local isBurningCrusade = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE)
-local isClassic = (LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CLASSIC)
+local isRetail = AddonFactory.isRetail
+local isMists = AddonFactory.isMists
+
 
 local BACKGROUND_PATH = "Interface\\TalentFrame\\"
 
