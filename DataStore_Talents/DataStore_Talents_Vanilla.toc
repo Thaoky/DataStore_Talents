@@ -1,10 +1,10 @@
-## Interface: 11508
+## Interface: 11509
 ## Title: DataStore_Talents
 ## IconTexture: Interface\Icons\garrison_building_storehouse
 
 ## Notes: Stores information about character talents
 ## Author: Thaoky (EU-Marécages de Zangar)
-## Version: 2026.10.02
+## Version: 2026.10.07
 ## Dependencies: DataStore
 ## OptionalDeps: Ace3
 ## SavedVariables: DataStore_Talents_Characters, DataStore_TalentsDB, DataStore_TalentsRefDB
